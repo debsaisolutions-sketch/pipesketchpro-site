@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 // TODO: Replace with your actual Stripe standalone payment link
-const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/REPLACE_WITH_STANDALONE_LINK'
+const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/8x2fZgdrOfGT79DgJ37N601'
 
 export default function HomePage() {
   return (

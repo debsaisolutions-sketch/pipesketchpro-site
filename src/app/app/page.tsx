@@ -85,7 +85,7 @@ export default function AppPage() {
           </p>
           <div className="space-y-3">
             <a
-              href="https://buy.stripe.com/REPLACE_WITH_STANDALONE_LINK"
+              href="https://buy.stripe.com/8x2fZgdrOfGT79DgJ37N601"
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full bg-[#F5C518] hover:bg-yellow-400 text-[#1a2f4a] font-black py-3.5 rounded-xl transition-colors"

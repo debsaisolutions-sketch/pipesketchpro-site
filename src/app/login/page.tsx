@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createBrowserSupabase } from '@/lib/supabase'
 
-const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/REPLACE_WITH_STANDALONE_LINK'
+const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/8x2fZgdrOfGT79DgJ37N601'
 
 function LoginForm() {
   const router = useRouter()
