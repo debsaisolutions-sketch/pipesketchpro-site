@@ -4,12 +4,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createBrowserSupabase } from '@/lib/supabase'
 
-const SUPABASE_URL = 'https://ftkpqjcwsuvrbaoexcxz.supabase.co'
-const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0a3BxamN3c3V2cmJhb2V4Y3h6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNTU2MjQsImV4cCI6MjA5NTczMTYyNH0.AlzI9AtVjN_eOQjCCAnF79pjWDa8MzR1SgCHS54go6k'
-const SERVICE_ROLE_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0a3BxamN3c3V2cmJhb2V4Y3h6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE1NTYyNCwiZXhwIjoyMDk1NzMxNjI0fQ.0BIcvCAcl3KCQdKOZ53iDfRbaVteoxxSVRYsBbW34JU'
-
 type Status = 'loading' | 'active' | 'no_subscription' | 'error'
 
 export default function AppPage() {
@@ -31,18 +25,14 @@ export default function AppPage() {
       const userId = session.user.id
 
       try {
-        const res = await fetch(
-          `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=psp_standalone,pipesketchpro_active`,
-          {
-            headers: {
-              'apikey': SUPABASE_ANON_KEY,
-              'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
-              'Accept': 'application/json',
-            },
-          }
-        )
-        const rows = await res.json()
-        const profile = Array.isArray(rows) ? rows[0] : null
+        // Use the signed-in user's JWT (RLS) — never service_role in the browser.
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('psp_standalone,pipesketchpro_active')
+          .eq('id', userId)
+          .maybeSingle()
+
+        if (error) throw error
 
         if (profile?.psp_standalone === true || profile?.pipesketchpro_active === true) {
           setStatus('active')

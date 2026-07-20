@@ -2,13 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-
-const SUPABASE_URL = 'https://ftkpqjcwsuvrbaoexcxz.supabase.co'
-const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0a3BxamN3c3V2cmJhb2V4Y3h6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNTU2MjQsImV4cCI6MjA5NTczMTYyNH0.AlzI9AtVjN_eOQjCCAnF79pjWDa8MzR1SgCHS54go6k'
-const SERVICE_ROLE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0a3BxamN3c3V2cmJhb2V4Y3h6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE1NTYyNCwiZXhwIjoyMDk1NzMxNjI0fQ.0BIcvCAcl3KCQdKOZ53iDfRbaVteoxxSVRYsBbW34JU'
+import { SUPABASE_URL, serviceRestHeaders } from '@/lib/supabase'
 
 export async function POST(req: NextRequest) {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY
@@ -16,6 +10,14 @@ export async function POST(req: NextRequest) {
 
   if (!stripeSecretKey || !webhookSecret) {
     console.error('[psp-webhook] Missing STRIPE_SECRET_KEY or STRIPE_PSP_WEBHOOK_SECRET')
+    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+  }
+
+  let serviceHeaders: Record<string, string>
+  try {
+    serviceHeaders = serviceRestHeaders({ 'Content-Type': 'application/json' })
+  } catch {
+    console.error('[psp-webhook] SUPABASE_SERVICE_ROLE_KEY is not set')
     return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
   }
 
@@ -49,12 +51,7 @@ export async function POST(req: NextRequest) {
     // 1. Check if user already exists
     const existingUsersRes = await fetch(
       `${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(email)}`,
-      {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
-        },
-      }
+      { headers: serviceHeaders }
     )
 
     let userId: string | null = null
@@ -72,11 +69,7 @@ export async function POST(req: NextRequest) {
     if (!userId) {
       const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/generateLink`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
-        },
+        headers: serviceHeaders,
         body: JSON.stringify({
           type: 'invite',
           email,
@@ -100,12 +93,7 @@ export async function POST(req: NextRequest) {
       if (!userId) {
         const lookupRes = await fetch(
           `${SUPABASE_URL}/rest/v1/profiles?email=eq.${encodeURIComponent(email)}&select=id`,
-          {
-            headers: {
-              'apikey': SUPABASE_ANON_KEY,
-              'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
-            },
-          }
+          { headers: serviceHeaders }
         )
         const rows = await lookupRes.json()
         if (Array.isArray(rows) && rows[0]?.id) userId = rows[0].id
@@ -116,28 +104,20 @@ export async function POST(req: NextRequest) {
 
     // 3. Ensure profile row exists and set psp_standalone = true
     if (userId) {
-      // Upsert profile
       await fetch(`${SUPABASE_URL}/rest/v1/profiles`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
-          'Prefer': 'resolution=merge-duplicates',
+          ...serviceHeaders,
+          Prefer: 'resolution=merge-duplicates',
         },
         body: JSON.stringify({ id: userId, email, psp_standalone: true }),
       })
     } else {
-      // Fallback: patch by email
       await fetch(
         `${SUPABASE_URL}/rest/v1/profiles?email=eq.${encodeURIComponent(email)}`,
         {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
-          },
+          headers: serviceHeaders,
           body: JSON.stringify({ psp_standalone: true }),
         }
       )
@@ -160,11 +140,7 @@ export async function POST(req: NextRequest) {
           `${SUPABASE_URL}/rest/v1/profiles?email=eq.${encodeURIComponent(customerEmail)}`,
           {
             method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': SUPABASE_ANON_KEY,
-              'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
-            },
+            headers: serviceHeaders,
             body: JSON.stringify({ psp_standalone: false }),
           }
         )

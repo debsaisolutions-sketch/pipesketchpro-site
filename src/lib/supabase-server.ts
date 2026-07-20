@@ -1,11 +1,11 @@
 // Server-only — uses next/headers. Never import this from client components.
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase'
+import { SUPABASE_URL, getAnonKey } from './supabase'
 
 export async function createServerSupabase() {
   const cookieStore = await cookies()
-  return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  return createServerClient(SUPABASE_URL, getAnonKey(), {
     cookies: {
       getAll() { return cookieStore.getAll() },
       setAll(cookiesToSet: { name: string; value: string; options: Record<string, unknown> }[]) {

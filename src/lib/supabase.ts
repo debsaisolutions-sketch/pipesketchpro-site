@@ -1,22 +1,41 @@
-// Browser-safe Supabase constants (no next/headers import here)
-import { createBrowserClient } from '@supabase/ssr'
+// Browser-safe Supabase helpers — keys from env only, never hardcoded.
+import { createBrowserClient, createServerClient } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
 
-export const SUPABASE_URL = 'https://ftkpqjcwsuvrbaoexcxz.supabase.co'
-export const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0a3BxamN3c3V2cmJhb2V4Y3h6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNTU2MjQsImV4cCI6MjA5NTczMTYyNH0.AlzI9AtVjN_eOQjCCAnF79pjWDa8MzR1SgCHS54go6k'
-export const SERVICE_ROLE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0a3BxamN3c3V2cmJhb2V4Y3h6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDE1NTYyNCwiZXhwIjoyMDk1NzMxNjI0fQ.0BIcvCAcl3KCQdKOZ53iDfRbaVteoxxSVRYsBbW34JU'
+export const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ftkpqjcwsuvrbaoexcxz.supabase.co'
+
+export function getAnonKey(): string {
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!key) throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY is not set')
+  return key
+}
+
+export function getServiceRoleKey(): string {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!key) throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set')
+  return key
+}
+
+function isLegacyJwtKey(key: string): boolean {
+  return key.startsWith('eyJ')
+}
+
+/** Headers for service-role PostgREST / Auth Admin. apikey-only for sb_secret_. */
+export function serviceRestHeaders(extra?: Record<string, string>): Record<string, string> {
+  const key = getServiceRoleKey()
+  const headers: Record<string, string> = { apikey: key, ...extra }
+  if (isLegacyJwtKey(key)) headers.Authorization = `Bearer ${key}`
+  return headers
+}
 
 export function createBrowserSupabase() {
-  return createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  return createBrowserClient(SUPABASE_URL, getAnonKey())
 }
 
 export function createMiddlewareSupabase(request: NextRequest) {
   let response = NextResponse.next({ request })
-  const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  const supabase = createServerClient(SUPABASE_URL, getAnonKey(), {
     cookies: {
       getAll() { return request.cookies.getAll() },
       setAll(cookiesToSet: { name: string; value: string; options: Record<string, unknown> }[]) {
