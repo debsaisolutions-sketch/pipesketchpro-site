@@ -68,18 +68,14 @@ export default function HomePage() {
             <p className="text-white/40 text-sm font-medium">Card required. Cancel anytime.</p>
           </div>
 
-          {/* Social proof */}
-          <div className="mt-16 flex flex-wrap justify-center gap-8">
-            {[
-              { label: 'Trades using it', value: '1,200+' },
-              { label: 'PDFs exported', value: '18,000+' },
-              { label: 'Avg. time saved / job', value: '45 min' },
-            ].map(({ label, value }) => (
-              <div key={label} className="text-center">
-                <p className="text-3xl font-black text-[#F5C518]">{value}</p>
-                <p className="text-white/50 text-sm font-semibold mt-1">{label}</p>
-              </div>
-            ))}
+          {/* Honest positioning — no fabricated usage metrics */}
+          <div className="mt-16 max-w-2xl mx-auto">
+            <p className="text-white/70 text-base sm:text-lg font-semibold leading-relaxed">
+              Built for working plumbers, pipefitters, welders and HVAC crews.
+            </p>
+            <p className="text-white/45 text-sm font-medium mt-2">
+              Designed from real field workflow feedback.
+            </p>
           </div>
         </div>
       </section>
@@ -208,9 +204,9 @@ export default function HomePage() {
                 body: "Do it on-site, during the walkthrough, before you leave the job. That\'s it.",
               },
               {
-                icon: '🔒',
-                title: 'Drawings saved to your account',
-                body: 'All your pipe sketches are saved and accessible from any device, anytime.',
+                icon: '☁️',
+                title: 'Jobs saved to your account',
+                body: 'Signed-in users can save, reopen, and sync jobs across phones and computers — with a device backup if you go offline.',
               },
             ].map(({ icon, title, body }) => (
               <div key={title} className="flex gap-4 p-5 rounded-xl border border-gray-100 hover:border-[#2E6DA4]/20 hover:bg-[#f7f9fc] transition-all">

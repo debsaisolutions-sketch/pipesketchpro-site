@@ -1,20 +1,61 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createBrowserSupabase } from '@/lib/supabase'
+import { resolvePspFeatures, DEFAULT_PSP_PLAN } from '@/lib/pspFeatures'
+// resolvePspFeatures gates future Solo/Pro/Team; billing unchanged for current subscribers.
 
 type Status = 'loading' | 'active' | 'no_subscription' | 'error'
+
+const TOOL_URL =
+  process.env.NEXT_PUBLIC_PSP_TOOL_URL || 'https://field-pipe-iso.vercel.app/'
+
+function getToolOrigin(url: string): string {
+  try {
+    return new URL(url).origin
+  } catch {
+    return 'https://field-pipe-iso.vercel.app'
+  }
+}
 
 export default function AppPage() {
   const router = useRouter()
   const [status, setStatus] = useState<Status>('loading')
   const [userEmail, setUserEmail] = useState('')
+  const [plan, setPlan] = useState(DEFAULT_PSP_PLAN)
+  const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  const sessionRef = useRef<{
+    access_token: string
+    refresh_token: string
+    expires_at?: number
+  } | null>(null)
+
+  const features = useMemo(() => resolvePspFeatures(plan), [plan])
+  const toolOrigin = useMemo(() => getToolOrigin(TOOL_URL), [])
+
+  const pushSessionToIframe = useCallback(() => {
+    const win = iframeRef.current?.contentWindow
+    if (!win || !sessionRef.current) return
+    win.postMessage(
+      {
+        source: 'pipesketchpro-site',
+        type: 'PSP_SESSION',
+        session: sessionRef.current,
+        plan,
+        features,
+        userEmail,
+      },
+      toolOrigin
+    )
+  }, [features, plan, toolOrigin, userEmail])
 
   useEffect(() => {
     const checkAccess = async () => {
       const supabase = createBrowserSupabase()
-      const { data: { session } } = await supabase.auth.getSession()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
 
       if (!session?.user) {
         router.push('/login?redirect=/app')
@@ -23,18 +64,46 @@ export default function AppPage() {
 
       setUserEmail(session.user.email || '')
       const userId = session.user.id
+      sessionRef.current = {
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+        expires_at: session.expires_at,
+      }
 
       try {
         // Use the signed-in user's JWT (RLS) — never service_role in the browser.
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('psp_standalone,pipesketchpro_active')
+          .select('psp_standalone,pipesketchpro_active,psp_plan')
           .eq('id', userId)
           .maybeSingle()
 
-        if (error) throw error
+        if (error) {
+          // psp_plan may not exist until migration — retry without it
+          const retry = await supabase
+            .from('profiles')
+            .select('psp_standalone,pipesketchpro_active')
+            .eq('id', userId)
+            .maybeSingle()
+          if (retry.error) throw retry.error
+          if (
+            retry.data?.psp_standalone === true ||
+            retry.data?.pipesketchpro_active === true
+          ) {
+            setPlan(DEFAULT_PSP_PLAN)
+            setStatus('active')
+          } else {
+            setStatus('no_subscription')
+          }
+          return
+        }
 
         if (profile?.psp_standalone === true || profile?.pipesketchpro_active === true) {
+          setPlan(
+            typeof profile.psp_plan === 'string' && profile.psp_plan
+              ? profile.psp_plan
+              : DEFAULT_PSP_PLAN
+          )
           setStatus('active')
         } else {
           setStatus('no_subscription')
@@ -45,9 +114,52 @@ export default function AppPage() {
     }
 
     checkAccess()
-  }, [router])
+
+    const supabase = createBrowserSupabase()
+    const { data: authSub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        sessionRef.current = null
+        iframeRef.current?.contentWindow?.postMessage(
+          { source: 'pipesketchpro-site', type: 'PSP_SESSION_CLEARED' },
+          toolOrigin
+        )
+        return
+      }
+      sessionRef.current = {
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+        expires_at: session.expires_at,
+      }
+      pushSessionToIframe()
+    })
+
+    return () => {
+      authSub.subscription.unsubscribe()
+    }
+  }, [router, toolOrigin, pushSessionToIframe])
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== toolOrigin) return
+      const data = event.data
+      if (!data || data.source !== 'pipesketchpro-tool') return
+      if (data.type === 'PSP_READY') {
+        pushSessionToIframe()
+      }
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [toolOrigin, pushSessionToIframe])
+
+  useEffect(() => {
+    if (status === 'active') pushSessionToIframe()
+  }, [status, pushSessionToIframe])
 
   const handleSignOut = async () => {
+    iframeRef.current?.contentWindow?.postMessage(
+      { source: 'pipesketchpro-site', type: 'PSP_SESSION_CLEARED' },
+      toolOrigin
+    )
     const supabase = createBrowserSupabase()
     await supabase.auth.signOut()
     router.push('/')
@@ -122,10 +234,8 @@ export default function AppPage() {
     )
   }
 
-  // status === 'active' — show the tool
   return (
     <div className="fixed inset-0 flex flex-col bg-[#0d1f33]">
-      {/* Header bar */}
       <div className="h-12 bg-[#1a2f4a] border-b border-white/10 flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-lg">🔧</span>
@@ -150,12 +260,13 @@ export default function AppPage() {
         </div>
       </div>
 
-      {/* Tool iframe */}
       <iframe
-        src="https://field-pipe-iso.vercel.app/"
+        ref={iframeRef}
+        src={`${TOOL_URL}${TOOL_URL.includes('?') ? '&' : '?'}embed=1`}
         title="PipeSketchPro"
         className="flex-1 w-full border-none"
         allow="fullscreen"
+        onLoad={pushSessionToIframe}
       />
     </div>
   )
