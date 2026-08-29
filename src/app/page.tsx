@@ -1,6 +1,12 @@
 import Link from 'next/link'
-import { PSP_STANDALONE_PRICE_LABEL, PSP_STANDALONE_PRICE_SUMMARY, STRIPE_PAYMENT_LINK, TDP_PSP_ADDON_PRICE_LABEL } from '@/lib/stripeLinks'
-
+import {
+  PSP_STANDALONE_CTA,
+  PSP_STANDALONE_HERO_SUPPORT,
+  PSP_STANDALONE_LOWER_SUPPORT,
+  STRIPE_PAYMENT_LINK,
+  TDP_PSP_ADDON_PRICE_LABEL,
+  TDP_SALES_URL,
+} from '@/lib/stripeLinks'
 export default function HomePage() {
   return (
     <div className="font-montserrat">
@@ -24,7 +30,7 @@ export default function HomePage() {
               rel="noopener noreferrer"
               className="bg-[#F5C518] text-[#1a2f4a] text-sm font-bold px-4 py-2 rounded-lg hover:bg-yellow-400 transition-colors"
             >
-              Start Free Trial
+              Start PipeSketch Pro
             </a>
           </div>
         </div>
@@ -61,10 +67,10 @@ export default function HomePage() {
               rel="noopener noreferrer"
               className="inline-block bg-[#F5C518] hover:bg-yellow-400 text-[#0d1f33] text-xl font-black px-10 py-5 rounded-2xl transition-all hover:scale-105 shadow-2xl shadow-[#F5C518]/20"
             >
-              Start Free 7-Day Trial — {PSP_STANDALONE_PRICE_SUMMARY}
+              {PSP_STANDALONE_CTA}
             </a>
-            <p className="text-white/40 text-sm font-medium">Card required. Cancel anytime.</p>
-          </div>
+            <p className="text-white/50 text-sm font-medium">{PSP_STANDALONE_HERO_SUPPORT}</p>
+            <p className="text-white/40 text-sm font-medium">Cancel anytime.</p>          </div>
 
           {/* Honest positioning — no fabricated usage metrics */}
           <div className="mt-16 max-w-2xl mx-auto">
@@ -182,32 +188,31 @@ export default function HomePage() {
                 body: 'No CAD knowledge needed. If you can tap a screen, you can use PipeSketchPro.',
               },
               {
+                icon: '☁️',
+                title: 'Cloud-saved jobs & My Jobs dashboard',
+                body: 'Save, reopen, and manage jobs from any device — with offline backup when you lose signal.',
+              },
+              {
+                icon: '📏',
+                title: 'Saved takeoff standards',
+                body: 'Store your company pipe sizes, materials, and fitting defaults so every sketch starts consistent.',
+              },
+              {
                 icon: '📋',
                 title: 'Auto-generates bill of materials',
-                body: 'Every fitting, every foot of pipe — automatically counted and listed as you draw.',
+                body: 'Every fitting and every foot of pipe — automatically counted and listed as you draw.',
               },
               {
                 icon: '📄',
-                title: 'Export print-ready PDF in one tap',
-                body: "Your drawing plus your material list in one professional document, ready to share.",
+                title: 'Professional spool & job PDFs',
+                body: 'Export print-ready isometric drawings and material lists in one tap — ready for the shop or the field.',
               },
               {
                 icon: '🚫',
                 title: 'Crew never needs an account',
-                body: "The PDF does the job. Send it via text or email — zero friction for the people in the field.",
+                body: 'Send the PDF by text or email. Your crew gets everything they need without signing in.',
               },
-              {
-                icon: '⏱️',
-                title: 'No office. No CAD software. No wasted time.',
-                body: "Do it on-site, during the walkthrough, before you leave the job. That\'s it.",
-              },
-              {
-                icon: '☁️',
-                title: 'Jobs saved to your account',
-                body: 'Signed-in users can save, reopen, and sync jobs across phones and computers — with a device backup if you go offline.',
-              },
-            ].map(({ icon, title, body }) => (
-              <div key={title} className="flex gap-4 p-5 rounded-xl border border-gray-100 hover:border-[#2E6DA4]/20 hover:bg-[#f7f9fc] transition-all">
+            ].map(({ icon, title, body }) => (              <div key={title} className="flex gap-4 p-5 rounded-xl border border-gray-100 hover:border-[#2E6DA4]/20 hover:bg-[#f7f9fc] transition-all">
                 <span className="text-2xl mt-0.5 shrink-0">{icon}</span>
                 <div>
                   <p className="font-black text-[#1a2f4a] mb-1">{title}</p>
@@ -220,15 +225,15 @@ export default function HomePage() {
       </section>
 
       {/* ══════════════════════════════════════
-          5. TRIAL CTA
+          5. PRICING CTA
       ══════════════════════════════════════ */}
       <section className="bg-[#2E6DA4] py-24">
         <div className="max-w-3xl mx-auto px-4 text-center">
           <h2 className="text-4xl sm:text-5xl font-black text-white mb-4 leading-tight">
-            Try PipeSketchPro<br />free for 7 days
+            Put PipeSketch Pro to work<br />in your shop
           </h2>
           <p className="text-white/70 text-xl font-medium mb-10">
-            {PSP_STANDALONE_PRICE_SUMMARY} after your trial. Cancel anytime.
+            {PSP_STANDALONE_LOWER_SUPPORT}. Cancel anytime.
           </p>
           <a
             href={STRIPE_PAYMENT_LINK}
@@ -236,13 +241,12 @@ export default function HomePage() {
             rel="noopener noreferrer"
             className="inline-block bg-[#F5C518] hover:bg-yellow-400 text-[#1a2f4a] text-xl font-black px-10 py-5 rounded-2xl transition-all hover:scale-105 shadow-2xl shadow-black/20"
           >
-            Start Free Trial
+            {PSP_STANDALONE_CTA}
           </a>
-          <p className="text-white/40 text-sm font-medium mt-4">Card required. Cancel anytime. No questions asked.</p>
+          <p className="text-white/40 text-sm font-medium mt-4">Card required. Cancel anytime.</p>
 
           <div className="mt-12 flex flex-wrap justify-center gap-6">
-            {['Works on iOS & Android', 'No CAD skills needed', 'Cancel anytime'].map((item) => (
-              <div key={item} className="flex items-center gap-2 text-white/70 text-sm font-semibold">
+            {['Works on iOS & Android', 'No CAD skills needed', 'Cloud-saved jobs'].map((item) => (              <div key={item} className="flex items-center gap-2 text-white/70 text-sm font-semibold">
                 <svg className="w-4 h-4 text-[#F5C518] shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
@@ -266,14 +270,13 @@ export default function HomePage() {
                 <span className="text-[#F5C518] text-sm font-black tracking-wide">CONTRACTOR BUNDLE</span>
               </div>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#F5C518] mb-5 leading-tight">
-                Want PipeSketchPro plus a full<br className="hidden sm:block" /> contractor business dashboard?
+                Already using TradeDeskPro?<br className="hidden sm:block" />
+                Get PipeSketch Pro for less — or included.
               </h2>
               <p className="text-white/70 text-lg font-medium max-w-2xl mx-auto leading-relaxed">
-                Get PipeSketchPro bundled with{' '}
-                <span className="text-[#F5C518] font-black">TradeDeskPro</span> — the all-in-one business operating system
-                built for service contractors.
-              </p>
-            </div>
+                TradeDeskPro Starter and Pro members can add PipeSketch Pro for just{' '}
+                {TDP_PSP_ADDON_PRICE_LABEL}. PipeSketch Pro is included with TradeDeskPro Complete.
+              </p>            </div>
 
             {/* Features grid */}
             <div className="grid sm:grid-cols-2 gap-3 mb-10">
@@ -301,27 +304,24 @@ export default function HomePage() {
             <div className="flex items-center gap-3 bg-[#F5C518]/10 border border-[#F5C518]/30 rounded-xl p-4 mb-10">
               <span className="text-2xl shrink-0">🔧</span>
               <div>
-                <p className="text-[#F5C518] font-black">PipeSketchPro with TradeDeskPro</p>
+                <p className="text-[#F5C518] font-black">PipeSketch Pro with TradeDeskPro</p>
                 <p className="text-white/60 text-sm font-medium mt-0.5">
-                  <span className="text-white font-semibold">Complete:</span> PipeSketch Pro included ·{' '}
-                  <span className="text-white font-semibold">Starter/Pro:</span> optional add-on at{' '}
-                  {TDP_PSP_ADDON_PRICE_LABEL}
-                </p>
-              </div>
+                  <span className="text-white font-semibold">Starter / Pro:</span> {TDP_PSP_ADDON_PRICE_LABEL} add-on ·{' '}
+                  <span className="text-white font-semibold">Complete:</span> Included
+                </p>              </div>
             </div>
 
             {/* CTA */}
             <div className="text-center">
               <a
-                href="https://www.tradedeskpro.net"
+                href={TDP_SALES_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-block bg-[#F5C518] hover:bg-yellow-400 text-[#0d1f33] text-xl font-black px-10 py-5 rounded-2xl transition-all hover:scale-105 shadow-2xl shadow-[#F5C518]/10"
               >
-                Get TradeDeskPro + PipeSketchPro →
+                See TradeDeskPro Plans →
               </a>
-              <p className="text-white/30 text-sm font-medium mt-3">tradedeskpro.net</p>
-            </div>
+              <p className="text-white/30 text-sm font-medium mt-3">tradedeskpro.net</p>            </div>
           </div>
         </div>
       </section>
@@ -348,14 +348,13 @@ export default function HomePage() {
                 Terms of Service
               </a>
               <a
-                href="https://www.tradedeskpro.net"
+                href={TDP_SALES_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#F5C518]/60 hover:text-[#F5C518] font-medium transition-colors"
               >
                 tradedeskpro.net
-              </a>
-            </div>
+              </a>            </div>
           </div>
         </div>
       </footer>

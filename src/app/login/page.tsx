@@ -8,7 +8,7 @@ import {
 } from '@/lib/authEmailAlias'
 import { createBrowserSupabase } from '@/lib/supabase'
 
-import { STRIPE_PAYMENT_LINK } from '@/lib/stripeLinks'
+import { PSP_STANDALONE_CTA, STRIPE_PAYMENT_LINK } from '@/lib/stripeLinks'
 
 function LoginForm() {
   const router = useRouter()
@@ -203,7 +203,7 @@ function LoginForm() {
               rel="noopener noreferrer"
               className="text-[#F5C518] font-bold hover:underline"
             >
-              Start free trial →
+              {PSP_STANDALONE_CTA} →
             </a>
           </p>
         </div>

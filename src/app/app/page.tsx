@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createBrowserSupabase } from '@/lib/supabase'
-import { PSP_STANDALONE_PRICE_LABEL, PSP_STANDALONE_PRICE_SUMMARY, STRIPE_PAYMENT_LINK, TDP_PSP_ADDON_PRICE_LABEL } from '@/lib/stripeLinks'
+import { PSP_STANDALONE_CTA, PSP_STANDALONE_HERO_SUPPORT, STRIPE_PAYMENT_LINK, TDP_PSP_ADDON_PRICE_LABEL, TDP_SALES_URL } from '@/lib/stripeLinks'
 import { resolvePspFeatures, DEFAULT_PSP_PLAN } from '@/lib/pspFeatures'
 import { resolvePspAccess, needsTdpPspAddon } from '@/lib/pspEntitlement'
 // resolvePspFeatures gates future Solo/Pro/Team; billing unchanged for current subscribers.
@@ -203,7 +203,7 @@ export default function AppPage() {
               Add PipeSketch Pro in TradeDeskPro — {TDP_PSP_ADDON_PRICE_LABEL}
             </a>
             <a
-              href="https://www.tradedeskpro.net"
+              href={TDP_SALES_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full bg-[#1a2f4a] hover:bg-[#0d1f33] text-white font-bold py-3.5 rounded-xl transition-colors text-sm"
@@ -238,10 +238,11 @@ export default function AppPage() {
               rel="noopener noreferrer"
               className="block w-full bg-[#F5C518] hover:bg-yellow-400 text-[#1a2f4a] font-black py-3.5 rounded-xl transition-colors"
             >
-              Start Free 7-Day Trial — {PSP_STANDALONE_PRICE_SUMMARY}
+              {PSP_STANDALONE_CTA}
             </a>
+            <p className="text-[#1a2f4a]/50 text-xs font-medium">{PSP_STANDALONE_HERO_SUPPORT}</p>
             <a
-              href="https://www.tradedeskpro.net"
+              href={TDP_SALES_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full bg-[#2E6DA4] hover:bg-[#1f4f7a] text-white font-bold py-3.5 rounded-xl transition-colors text-sm"
