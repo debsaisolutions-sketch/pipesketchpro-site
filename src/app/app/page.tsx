@@ -3,10 +3,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createBrowserSupabase } from '@/lib/supabase'
+import { PSP_STANDALONE_PRICE_LABEL, PSP_STANDALONE_PRICE_SUMMARY, STRIPE_PAYMENT_LINK, TDP_PSP_ADDON_PRICE_LABEL } from '@/lib/stripeLinks'
 import { resolvePspFeatures, DEFAULT_PSP_PLAN } from '@/lib/pspFeatures'
+import { resolvePspAccess, needsTdpPspAddon } from '@/lib/pspEntitlement'
 // resolvePspFeatures gates future Solo/Pro/Team; billing unchanged for current subscribers.
 
-type Status = 'loading' | 'active' | 'no_subscription' | 'error'
+type Status = 'loading' | 'active' | 'no_subscription' | 'tdp_addon_required' | 'error'
 
 const TOOL_URL =
   process.env.NEXT_PUBLIC_PSP_TOOL_URL || 'https://field-pipe-iso.vercel.app/'
@@ -74,37 +76,41 @@ export default function AppPage() {
         // Use the signed-in user's JWT (RLS) — never service_role in the browser.
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('psp_standalone,pipesketchpro_active,psp_plan')
+          .select(
+            'psp_standalone,pipesketchpro_active,psp_tdp_addon_active,psp_plan,tier_int,tier,subscription_status'
+          )
           .eq('id', userId)
           .maybeSingle()
 
         if (error) {
-          // psp_plan may not exist until migration — retry without it
           const retry = await supabase
             .from('profiles')
-            .select('psp_standalone,pipesketchpro_active')
+            .select(
+              'psp_standalone,pipesketchpro_active,psp_tdp_addon_active,tier_int,tier,subscription_status'
+            )
             .eq('id', userId)
             .maybeSingle()
           if (retry.error) throw retry.error
-          if (
-            retry.data?.psp_standalone === true ||
-            retry.data?.pipesketchpro_active === true
-          ) {
+          if (resolvePspAccess(retry.data)) {
             setPlan(DEFAULT_PSP_PLAN)
             setStatus('active')
+          } else if (needsTdpPspAddon(retry.data)) {
+            setStatus('tdp_addon_required')
           } else {
             setStatus('no_subscription')
           }
           return
         }
 
-        if (profile?.psp_standalone === true || profile?.pipesketchpro_active === true) {
+        if (resolvePspAccess(profile)) {
           setPlan(
-            typeof profile.psp_plan === 'string' && profile.psp_plan
+            typeof profile?.psp_plan === 'string' && profile.psp_plan
               ? profile.psp_plan
               : DEFAULT_PSP_PLAN
           )
           setStatus('active')
+        } else if (needsTdpPspAddon(profile)) {
+          setStatus('tdp_addon_required')
         } else {
           setStatus('no_subscription')
         }
@@ -176,6 +182,46 @@ export default function AppPage() {
     )
   }
 
+  if (status === 'tdp_addon_required') {
+    return (
+      <div className="min-h-screen bg-[#0d1f33] flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl p-8 text-center shadow-2xl">
+          <div className="text-5xl mb-4">🔧</div>
+          <h1 className="text-2xl font-black text-[#1a2f4a] mb-2">TradeDeskPro add-on required</h1>
+          <p className="text-[#1a2f4a]/60 font-medium mb-6 text-sm leading-relaxed">
+            Your TradeDeskPro account <strong>{userEmail}</strong> is active, but PipeSketch Pro is not
+            included on your current plan. Add it for {TDP_PSP_ADDON_PRICE_LABEL}, or upgrade to Complete
+            where it&apos;s included at no extra charge.
+          </p>
+          <div className="space-y-3">
+            <a
+              href="https://www.tradedeskpro.com/addons"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full bg-[#2E6DA4] hover:bg-[#1f4f7a] text-white font-bold py-3.5 rounded-xl transition-colors text-sm"
+            >
+              Add PipeSketch Pro in TradeDeskPro — {TDP_PSP_ADDON_PRICE_LABEL}
+            </a>
+            <a
+              href="https://www.tradedeskpro.net"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full bg-[#1a2f4a] hover:bg-[#0d1f33] text-white font-bold py-3.5 rounded-xl transition-colors text-sm"
+            >
+              Upgrade to Complete (PipeSketch included)
+            </a>
+            <button
+              onClick={handleSignOut}
+              className="block w-full text-[#1a2f4a]/40 text-sm font-medium hover:text-[#1a2f4a] transition-colors py-2"
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (status === 'no_subscription') {
     return (
       <div className="min-h-screen bg-[#0d1f33] flex items-center justify-center px-4">
@@ -187,12 +233,12 @@ export default function AppPage() {
           </p>
           <div className="space-y-3">
             <a
-              href="https://buy.stripe.com/8x2fZgdrOfGT79DgJ37N601"
+              href={STRIPE_PAYMENT_LINK}
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full bg-[#F5C518] hover:bg-yellow-400 text-[#1a2f4a] font-black py-3.5 rounded-xl transition-colors"
             >
-              Start Free 7-Day Trial — $49/month after
+              Start Free 7-Day Trial — {PSP_STANDALONE_PRICE_SUMMARY}
             </a>
             <a
               href="https://www.tradedeskpro.net"
@@ -200,7 +246,7 @@ export default function AppPage() {
               rel="noopener noreferrer"
               className="block w-full bg-[#2E6DA4] hover:bg-[#1f4f7a] text-white font-bold py-3.5 rounded-xl transition-colors text-sm"
             >
-              Get TradeDeskPro + PipeSketchPro for $29/month →
+              TradeDeskPro Complete includes PipeSketch Pro →
             </a>
             <button
               onClick={handleSignOut}

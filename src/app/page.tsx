@@ -1,7 +1,5 @@
 import Link from 'next/link'
-
-// TODO: Replace with your actual Stripe standalone payment link
-const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/8x2fZgdrOfGT79DgJ37N601'
+import { PSP_STANDALONE_PRICE_LABEL, PSP_STANDALONE_PRICE_SUMMARY, STRIPE_PAYMENT_LINK, TDP_PSP_ADDON_PRICE_LABEL } from '@/lib/stripeLinks'
 
 export default function HomePage() {
   return (
@@ -63,7 +61,7 @@ export default function HomePage() {
               rel="noopener noreferrer"
               className="inline-block bg-[#F5C518] hover:bg-yellow-400 text-[#0d1f33] text-xl font-black px-10 py-5 rounded-2xl transition-all hover:scale-105 shadow-2xl shadow-[#F5C518]/20"
             >
-              Start Free 7-Day Trial — $49/month after
+              Start Free 7-Day Trial — {PSP_STANDALONE_PRICE_SUMMARY}
             </a>
             <p className="text-white/40 text-sm font-medium">Card required. Cancel anytime.</p>
           </div>
@@ -230,7 +228,7 @@ export default function HomePage() {
             Try PipeSketchPro<br />free for 7 days
           </h2>
           <p className="text-white/70 text-xl font-medium mb-10">
-            $49/month after your trial. Cancel anytime.
+            {PSP_STANDALONE_PRICE_SUMMARY} after your trial. Cancel anytime.
           </p>
           <a
             href={STRIPE_PAYMENT_LINK}
@@ -268,11 +266,10 @@ export default function HomePage() {
                 <span className="text-[#F5C518] text-sm font-black tracking-wide">CONTRACTOR BUNDLE</span>
               </div>
               <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#F5C518] mb-5 leading-tight">
-                Want PipeSketchPro for half price<br />
-                — plus a full contractor<br className="hidden sm:block" /> business dashboard?
+                Want PipeSketchPro plus a full<br className="hidden sm:block" /> contractor business dashboard?
               </h2>
               <p className="text-white/70 text-lg font-medium max-w-2xl mx-auto leading-relaxed">
-                Get PipeSketchPro for just <span className="text-white font-black">$29/month</span> when you subscribe to{' '}
+                Get PipeSketchPro bundled with{' '}
                 <span className="text-[#F5C518] font-black">TradeDeskPro</span> — the all-in-one business operating system
                 built for service contractors.
               </p>
@@ -304,10 +301,11 @@ export default function HomePage() {
             <div className="flex items-center gap-3 bg-[#F5C518]/10 border border-[#F5C518]/30 rounded-xl p-4 mb-10">
               <span className="text-2xl shrink-0">🔧</span>
               <div>
-                <p className="text-[#F5C518] font-black">PipeSketchPro included as add-on</p>
+                <p className="text-[#F5C518] font-black">PipeSketchPro with TradeDeskPro</p>
                 <p className="text-white/60 text-sm font-medium mt-0.5">
-                  <span className="line-through text-white/30">$49/month standalone</span>
-                  <span className="ml-2 text-[#F5C518] font-black">$29/month with TradeDeskPro — half the price</span>
+                  <span className="text-white font-semibold">Complete:</span> PipeSketch Pro included ·{' '}
+                  <span className="text-white font-semibold">Starter/Pro:</span> optional add-on at{' '}
+                  {TDP_PSP_ADDON_PRICE_LABEL}
                 </p>
               </div>
             </div>

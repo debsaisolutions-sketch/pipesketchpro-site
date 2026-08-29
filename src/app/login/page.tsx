@@ -2,9 +2,13 @@
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import {
+  getPasswordResetDeliveryEmail,
+  resolveAuthEmail,
+} from '@/lib/authEmailAlias'
 import { createBrowserSupabase } from '@/lib/supabase'
 
-const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/8x2fZgdrOfGT79DgJ37N601'
+import { STRIPE_PAYMENT_LINK } from '@/lib/stripeLinks'
 
 function LoginForm() {
   const router = useRouter()
@@ -17,6 +21,7 @@ function LoginForm() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [resetSent, setResetSent] = useState(false)
+  const [resetDeliveryEmail, setResetDeliveryEmail] = useState('')
   const [showReset, setShowReset] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -25,7 +30,11 @@ function LoginForm() {
     setLoading(true)
 
     const supabase = createBrowserSupabase()
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    const authEmail = resolveAuthEmail(email)
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: authEmail,
+      password,
+    })
 
     if (authError) {
       setError(authError.message)
@@ -40,12 +49,21 @@ function LoginForm() {
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email) { setError('Enter your email above first.'); return }
+    setError('')
     setLoading(true)
     const supabase = createBrowserSupabase()
-    await supabase.auth.resetPasswordForEmail(email, {
+    const authEmail = resolveAuthEmail(email)
+    const deliveryEmail = getPasswordResetDeliveryEmail(email)
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(authEmail, {
       redirectTo: `${window.location.origin}/api/auth/callback?next=/app`,
     })
+    if (resetError) {
+      setError(resetError.message)
+      setLoading(false)
+      return
+    }
     setResetSent(true)
+    setResetDeliveryEmail(deliveryEmail)
     setLoading(false)
   }
 
@@ -90,10 +108,14 @@ function LoginForm() {
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
               <p className="text-blue-800 font-bold">Check your email</p>
               <p className="text-blue-700 text-sm font-medium mt-1">
-                We sent a password reset link to {email}.
+                We sent a password reset link to {resetDeliveryEmail || email}.
               </p>
               <button
-                onClick={() => { setShowReset(false); setResetSent(false) }}
+                onClick={() => {
+                  setShowReset(false)
+                  setResetSent(false)
+                  setResetDeliveryEmail('')
+                }}
                 className="mt-3 text-[#2E6DA4] text-sm font-bold hover:underline"
               >
                 Back to login
